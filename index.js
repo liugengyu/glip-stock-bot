@@ -8,6 +8,7 @@ const bodyParser = require('body-parser')
 const axios = require('axios')
 const R = require('ramda')
 const moment = require('moment')
+const cheerio = require('cheerio')
 
 const pkg = require('./package.json')
 
@@ -31,26 +32,50 @@ const sendGlipMessage = async (groupId, text, attachments) => {
 }
 
 const getStockMessage = async symbol => {
+  let text = null
+  let attachments = null
   try {
     const r = await axios.get(`https://www.quandl.com/api/v3/datasets/WIKI/${symbol}.json?api_key=hWMcYrZQW1uL-G5C6Grn&start_date=${moment().subtract(30, 'days').format('YYYY-MM-DD')}`)
     const dataset = r.data.dataset
     const price = dataset.data[0][4]
     const entries = R.slice(0, 6, dataset.data)
-    const text = `${dataset.name.split(' Prices, ')[0]} **$${price}**`
-    return {
-      text,
-      attachments: [{
-        type: 'Card',
-        fallback: text,
-        fields: R.map(entry => ({
-          title: entry[0],
-          value: '$' + entry[4],
-          style: 'Short'
-        }), entries)
-      }]
-    }
+    text = `${dataset.name.split(' Prices, ')[0]} **$${price}**`
+    attachments = [{
+      type: 'Card',
+      fallback: text,
+      fields: R.map(entry => ({
+        title: entry[0],
+        value: '$' + entry[4],
+        style: 'Short'
+      }), entries)
+    }]
   } catch (e) {
     return { text: `**${symbol}** is not a known stock symbol` }
+  }
+  try {
+    const r = await axios.get(`http://feeds.finance.yahoo.com/rss/2.0/headline?s=${symbol}&lang=en-US`)
+    const $ = cheerio.load(r.data)
+    $('item').each(function (i, elem) {
+      if (i >= 3) { return false }
+      const title = $(this).find('title').text()
+      const description = $(this).find('description').text()
+      const guid = $(this).find('guid').text()
+      attachments.push({
+        type: 'Card',
+        fallback: `[${title}](http://finance.yahoo.com/r/${guid})`,
+        text: description,
+        author: {
+          name: title,
+          uri: `http://finance.yahoo.com/r/${guid}`
+        }
+      })
+    })
+  } catch (e) {
+    // failed to fetch news
+  }
+  return {
+    text,
+    attachments
   }
 }
 
@@ -74,7 +99,12 @@ app.post('/webhook', async (req, res) => {
     if (message.text.startsWith('stock ')) {
       const stockSymbol = message.text.substring(6).trim().toUpperCase()
       const stockMessage = await getStockMessage(stockSymbol)
-      await sendGlipMessage(message.groupId, stockMessage.text, stockMessage.attachments)
+      if (!R.isNil(stockMessage.attachments) && stockMessage.attachments.length > 1) {
+        await sendGlipMessage(message.groupId, stockMessage.text, [stockMessage.attachments[0]])
+        await sendGlipMessage(message.groupId, '', R.tail(stockMessage.attachments))
+      } else {
+        await sendGlipMessage(message.groupId, stockMessage.text, stockMessage.attachments)
+      }
     }
   }
   res.set('validation-token', req.get('validation-token'))

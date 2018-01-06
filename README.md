@@ -22,3 +22,10 @@ Follow the [youtube video tutorial](https://www.youtube.com/watch?v=67yifrwUNsw)
 yarn start
 yarn ngrok
 ```
+
+
+## What does this bot do?
+
+Specify a stock symbol, and you will get its quotes for the recent 6 days together with 3 recent news about this stock.
+
+![](screenshot.png)
