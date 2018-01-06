@@ -43,6 +43,7 @@ const sendStockMessage = async (symbol, groupId) => {
     attachments = [{
       type: 'Card',
       fallback: text,
+      color: '#006400',
       fields: R.map(entry => ({
         title: entry[0],
         value: '$' + entry[4],
