@@ -6,6 +6,7 @@ const fs = require('fs')
 const path = require('path')
 const bodyParser = require('body-parser')
 const axios = require('axios')
+const R = require('ramda')
 
 const pkg = require('./package.json')
 
@@ -32,15 +33,23 @@ const getStockMessage = async symbol => {
   try {
     const r = await axios.get(`https://www.quandl.com/api/v3/datasets/WIKI/${symbol}.json?api_key=hWMcYrZQW1uL-G5C6Grn&start_date=2018-01-01`)
     const dataset = r.data.dataset
+    const price = dataset.data[0][4]
+    const entries = R.slice(0, 6, dataset.data)
+    const text = `${dataset.name.split(' Prices, ')[0]} **$${price}**`
     return {
-      text: `${dataset.name}: **$${dataset.data[0][4]}**`,
+      text,
       attachments: [{
-        'type': 'Card',
-        'fallback': 'Attachment fallback text'
+        type: 'Card',
+        fallback: text,
+        fields: R.map(entry => ({
+          title: entry[0],
+          value: '$' + entry[4],
+          style: 'Short'
+        }), entries)
       }]
     }
   } catch (e) {
-    return { text: `Cannot find stock information for ${symbol}` }
+    return { text: `**${symbol}** is not a known stock symbol` }
   }
 }
 
@@ -57,16 +66,14 @@ app.get('/oauth', async (req, res) => {
 })
 app.post('/webhook', async (req, res) => {
   const message = req.body.body
-  console.log(JSON.stringify(req.body))
   if (message && message.type === 'TextMessage') {
     if (message.text === 'ping') {
       await sendGlipMessage(message.groupId, 'pong')
     }
     if (message.text.startsWith('stock ')) {
       const stockSymbol = message.text.substring(6).trim().toUpperCase()
-      const temp = await getStockMessage(stockSymbol)
-      console.log(temp)
-      await sendGlipMessage(message.groupId, temp.text, temp.attachments)
+      const stockMessage = await getStockMessage(stockSymbol)
+      await sendGlipMessage(message.groupId, stockMessage.text, stockMessage.attachments)
     }
   }
   res.set('validation-token', req.get('validation-token'))
