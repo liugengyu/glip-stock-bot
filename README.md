@@ -28,8 +28,13 @@ yarn ngrok
 
 Specify a stock symbol, and you will get its quotes for the recent 6 days together with 3 recent news about this stock.
 
+
+## Screenshots
+
+### Stock Quote for Microsoft
+
 ![](screenshot.png)
 
----
+### Stock Quote for RingCentral
 
 ![](screenshot2.png)
