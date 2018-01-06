@@ -7,6 +7,7 @@ const path = require('path')
 const bodyParser = require('body-parser')
 const axios = require('axios')
 const R = require('ramda')
+const moment = require('moment')
 
 const pkg = require('./package.json')
 
@@ -31,7 +32,7 @@ const sendGlipMessage = async (groupId, text, attachments) => {
 
 const getStockMessage = async symbol => {
   try {
-    const r = await axios.get(`https://www.quandl.com/api/v3/datasets/WIKI/${symbol}.json?api_key=hWMcYrZQW1uL-G5C6Grn&start_date=2018-01-01`)
+    const r = await axios.get(`https://www.quandl.com/api/v3/datasets/WIKI/${symbol}.json?api_key=hWMcYrZQW1uL-G5C6Grn&start_date=${moment().subtract(30, 'days').format('YYYY-MM-DD')}`)
     const dataset = r.data.dataset
     const price = dataset.data[0][4]
     const entries = R.slice(0, 6, dataset.data)
