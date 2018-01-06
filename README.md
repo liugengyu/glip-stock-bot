@@ -7,6 +7,11 @@ I created this project based on this [youtube video tutorial](https://www.youtub
 I used the Glip message attachment API to make the bot produce beautiful messages.
 
 
+## Video demo
+
+https://www.youtube.com/watch?v=Bd3E05_0lz4
+
+
 ## Setup
 
 ```
