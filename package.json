@@ -1,0 +1,23 @@
+{
+  "name": "glip-stock-bot",
+  "version": "0.1.0",
+  "description": "A stock quote bot for Glip.",
+  "license": "MIT",
+  "scripts": {
+    "upgrade": "yarn-upgrade-all",
+    "start": "node index.js -p 3000",
+    "ngrok": "ngrok http 3000"
+  },
+  "devDependencies": {
+    "ngrok": "^2.2.24",
+    "standard": "^10.0.3",
+    "yarn-upgrade-all": "^0.2.1"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "commander": "^2.12.2",
+    "dotenv": "^4.0.0",
+    "express": "^4.16.2",
+    "ringcentral-js-concise": "^0.1.0"
+  }
+}
