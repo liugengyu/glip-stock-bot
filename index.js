@@ -5,6 +5,7 @@ const RingCentral = require('ringcentral-js-concise')
 const fs = require('fs')
 const path = require('path')
 const bodyParser = require('body-parser')
+const axios = require('axios')
 
 const pkg = require('./package.json')
 
@@ -17,6 +18,30 @@ const rc = new RingCentral(
 )
 if (fs.existsSync(tokenFile)) { // restore token
   rc.token(JSON.parse(fs.readFileSync(tokenFile, 'utf-8')))
+}
+
+const sendGlipMessage = async (groupId, text, attachments) => {
+  try {
+    await rc.post('/restapi/v1.0/glip/posts', { groupId, text, attachments })
+  } catch (e) {
+    console.error(e.response.data)
+  }
+}
+
+const getStockMessage = async symbol => {
+  try {
+    const r = await axios.get(`https://www.quandl.com/api/v3/datasets/WIKI/${symbol}.json?api_key=hWMcYrZQW1uL-G5C6Grn&start_date=2018-01-01`)
+    const dataset = r.data.dataset
+    return {
+      text: `${dataset.name}: **$${dataset.data[0][4]}**`,
+      attachments: [{
+        'type': 'Card',
+        'fallback': 'Attachment fallback text'
+      }]
+    }
+  } catch (e) {
+    return { text: `Cannot find stock information for ${symbol}` }
+  }
 }
 
 const app = express()
@@ -32,13 +57,16 @@ app.get('/oauth', async (req, res) => {
 })
 app.post('/webhook', async (req, res) => {
   const message = req.body.body
+  console.log(JSON.stringify(req.body))
   if (message && message.type === 'TextMessage') {
     if (message.text === 'ping') {
-      try {
-        await rc.post('/restapi/v1.0/glip/posts', { groupId: message.groupId, text: 'pong' })
-      } catch (e) {
-        console.error(e.response.data)
-      }
+      await sendGlipMessage(message.groupId, 'pong')
+    }
+    if (message.text.startsWith('stock ')) {
+      const stockSymbol = message.text.substring(6).trim().toUpperCase()
+      const temp = await getStockMessage(stockSymbol)
+      console.log(temp)
+      await sendGlipMessage(message.groupId, temp.text, temp.attachments)
     }
   }
   res.set('validation-token', req.get('validation-token'))
