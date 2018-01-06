@@ -30,4 +30,6 @@ Specify a stock symbol, and you will get its quotes for the recent 6 days togeth
 
 ![](screenshot.png)
 
+---
+
 ![](screenshot2.png)
