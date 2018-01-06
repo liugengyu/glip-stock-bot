@@ -9,7 +9,7 @@ const bodyParser = require('body-parser')
 const pkg = require('./package.json')
 
 dotenv.config()
-const tokenFile = path.join(__dirname, '..', '.token')
+const tokenFile = path.join(__dirname, '.token')
 const rc = new RingCentral(
   process.env.GLIP_CLIENT_ID,
   process.env.GLIP_CLIENT_SECRET,
