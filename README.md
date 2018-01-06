@@ -4,6 +4,8 @@ A stock quote bot for [Glip](https://glip.com/).
 
 I created this project based on this [youtube video tutorial](https://www.youtube.com/watch?v=67yifrwUNsw). If you don't know how to setup and run this project, please refer to that video.
 
+I used the Glip message attachment API to make the bot produce beautiful messages.
+
 
 ## Setup
 
