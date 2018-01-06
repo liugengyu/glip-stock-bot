@@ -31,7 +31,7 @@ const sendGlipMessage = async (groupId, text, attachments) => {
   }
 }
 
-const getStockMessage = async symbol => {
+const sendStockMessage = async (symbol, groupId) => {
   let text = null
   let attachments = null
   try {
@@ -50,8 +50,13 @@ const getStockMessage = async symbol => {
       }), entries)
     }]
   } catch (e) {
-    return { text: `**${symbol}** is not a known stock symbol` }
+    await sendGlipMessage(groupId, `**${symbol}** is not a known stock symbol`)
+    return
   }
+  await sendGlipMessage(groupId, text, attachments)
+
+  text = ''
+  attachments = []
   try {
     const r = await axios.get(`http://feeds.finance.yahoo.com/rss/2.0/headline?s=${symbol}&lang=en-US`)
     const $ = cheerio.load(r.data)
@@ -71,12 +76,9 @@ const getStockMessage = async symbol => {
       })
     })
   } catch (e) {
-    // failed to fetch news
+    return
   }
-  return {
-    text,
-    attachments
-  }
+  await sendGlipMessage(groupId, `News about **${symbol}**`, attachments)
 }
 
 const app = express()
@@ -93,18 +95,9 @@ app.get('/oauth', async (req, res) => {
 app.post('/webhook', async (req, res) => {
   const message = req.body.body
   if (message && message.type === 'TextMessage') {
-    if (message.text === 'ping') {
-      await sendGlipMessage(message.groupId, 'pong')
-    }
     if (message.text.startsWith('stock ')) {
       const stockSymbol = message.text.substring(6).trim().toUpperCase()
-      const stockMessage = await getStockMessage(stockSymbol)
-      if (!R.isNil(stockMessage.attachments) && stockMessage.attachments.length > 1) {
-        await sendGlipMessage(message.groupId, stockMessage.text, [stockMessage.attachments[0]])
-        await sendGlipMessage(message.groupId, '', R.tail(stockMessage.attachments))
-      } else {
-        await sendGlipMessage(message.groupId, stockMessage.text, stockMessage.attachments)
-      }
+      await sendStockMessage(stockSymbol, message.groupId)
     }
   }
   res.set('validation-token', req.get('validation-token'))
